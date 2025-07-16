@@ -4,8 +4,8 @@ node_modules/
 .pnp.js
 
 # Production builds
-dist/
-build/
+/dist
+/build
 
 # Environment variables
 .env
@@ -35,6 +35,7 @@ coverage/
 .nyc_output
 
 # Dependency directories
+node_modules/
 jspm_packages/
 
 # Optional npm cache directory
@@ -67,6 +68,7 @@ jspm_packages/
 
 # Nuxt.js build / generate output
 .nuxt
+dist
 
 # Storybook build outputs
 .out
@@ -77,24 +79,16 @@ tmp/
 temp/
 
 # Editor directories and files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS generated files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Vercel
 .vercel
-
-# Local development
-*.local
 
