@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { ArrowRight, CheckCircle, TrendingUp, DollarSign, Cpu, Zap } from 'lucide-react'
 import './App.css'
 
 // Industry and KPI data
@@ -59,10 +58,10 @@ function App() {
   const [roiResults, setROIResults] = useState(null)
 
   const steps = [
-    { id: 1, title: 'Industry & KPI', description: 'Select your industry and key metric' },
-    { id: 2, title: 'Current State', description: 'Enter your current performance' },
-    { id: 3, title: 'Aspiration', description: 'Set your target goal' },
-    { id: 4, title: 'ROI Results', description: 'View your potential returns' }
+    { id: 1, title: 'Industry & KPI' },
+    { id: 2, title: 'Current State' },
+    { id: 3, title: 'Aspiration' },
+    { id: 4, title: 'ROI Results' }
   ]
 
   const handleIndustrySelect = (industry) => {
@@ -95,10 +94,8 @@ function App() {
     // Calculate improvement percentage
     let improvement = 0
     if (selectedKPI.id.includes('rate') && !selectedKPI.id.includes('success') && !selectedKPI.id.includes('satisfaction') && !selectedKPI.id.includes('approval') && !selectedKPI.id.includes('detection') && !selectedKPI.id.includes('fulfillment')) {
-      // For rates where lower is better (churn, backorder, readmission, etc.)
       improvement = ((current - target) / current) * 100
     } else {
-      // For rates where higher is better (success, satisfaction, approval, etc.)
       improvement = ((target - current) / current) * 100
     }
 
@@ -129,54 +126,32 @@ function App() {
     setCurrentStep(4)
   }
 
-  const ProgressIndicator = () => (
-    <div className="flex items-center justify-center mb-8 px-4">
-      {steps.map((step, index) => (
-        <div key={step.id} className="flex items-center">
-          <div className={`
-            flex items-center justify-center w-12 h-12 rounded-full text-sm font-semibold transition-all duration-300
-            sriya-progress-step
-            ${currentStep === step.id ? 'active' : ''}
-            ${currentStep > step.id ? 'completed' : ''}
-          `}>
-            {currentStep > step.id ? <CheckCircle className="w-6 h-6" /> : step.id}
-          </div>
-          {index < steps.length - 1 && (
-            <div className={`w-16 h-0.5 mx-2 transition-all duration-300 ${
-              currentStep > step.id ? 'bg-[#9aff00]' : 'bg-gray-600'
-            }`} />
-          )}
-        </div>
-      ))}
-    </div>
-  )
-
-  const StepContent = () => {
+  const renderStep = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2 sriya-text-primary">Industry & KPI</h2>
-              <p className="sriya-text-secondary">Select your industry and key metric</p>
+          <div>
+            <div className="content">
+              <h2 className="title">Industry & KPI</h2>
+              <p className="subtitle">Select your industry and key metric</p>
             </div>
 
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold mb-4 text-white">Select Your Industry</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'white' }}>
+                Select Your Industry
+              </h3>
+              <div className="grid">
                 {industries.map((industry) => (
                   <div
                     key={industry.id}
-                    className={`cursor-pointer transition-all duration-300 sriya-card p-6 ${
-                      selectedIndustry?.id === industry.id ? 'sriya-border-accent sriya-glow' : ''
-                    }`}
+                    className={`card ${selectedIndustry?.id === industry.id ? 'selected' : ''}`}
                     onClick={() => handleIndustrySelect(industry)}
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="text-3xl">{industry.icon}</div>
+                    <div className="card-header">
+                      <div className="card-icon">{industry.icon}</div>
                       <div>
-                        <h4 className="font-semibold text-white">{industry.name}</h4>
-                        <p className="text-sm sriya-text-secondary">{industry.description}</p>
+                        <div className="card-title">{industry.name}</div>
+                        <div className="card-description">{industry.description}</div>
                       </div>
                     </div>
                   </div>
@@ -185,28 +160,26 @@ function App() {
             </div>
 
             {selectedIndustry && (
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-white">Choose Your KPI</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div style={{ marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'white' }}>
+                  Choose Your KPI
+                </h3>
+                <div className="grid">
                   {selectedIndustry.kpis.map((kpi) => (
                     <div
                       key={kpi.id}
-                      className={`cursor-pointer transition-all duration-300 sriya-card p-4 ${
-                        selectedKPI?.id === kpi.id ? 'sriya-border-accent sriya-glow' : ''
-                      }`}
+                      className={`card ${selectedKPI?.id === kpi.id ? 'selected' : ''}`}
                       onClick={() => handleKPISelect(kpi)}
                     >
-                      <h4 className="font-semibold mb-2 text-white">{kpi.name}</h4>
-                      <p className="text-xs sriya-text-secondary mb-3">{kpi.definition}</p>
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="sriya-text-secondary">Typical:</span>
-                          <span className="text-orange-400">{kpi.typical}</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="sriya-text-secondary">Target:</span>
-                          <span className="sriya-text-primary">{kpi.target}</span>
-                        </div>
+                      <div className="card-title" style={{ marginBottom: '0.5rem' }}>{kpi.name}</div>
+                      <p style={{ fontSize: '0.875rem', color: '#cccccc', marginBottom: '1rem' }}>
+                        {kpi.definition}
+                      </p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span style={{ color: '#cccccc' }}>Typical: <span style={{ color: '#f97316' }}>{kpi.typical}</span></span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span style={{ color: '#cccccc' }}>Target: <span style={{ color: '#9aff00' }}>{kpi.target}</span></span>
                       </div>
                     </div>
                   ))}
@@ -214,14 +187,13 @@ function App() {
               </div>
             )}
 
-            <div className="flex justify-end">
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 onClick={handleNextStep}
                 disabled={!selectedIndustry || !selectedKPI}
-                className="sriya-button-primary px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="button"
               >
-                <span>Next Step</span>
-                <ArrowRight className="w-4 h-4" />
+                Next Step →
               </button>
             </div>
           </div>
@@ -229,66 +201,63 @@ function App() {
 
       case 2:
         return (
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2 sriya-text-primary">Current State</h2>
-              <p className="sriya-text-secondary">Enter your current performance</p>
+          <div>
+            <div className="content">
+              <h2 className="title">Current State</h2>
+              <p className="subtitle">Enter your current performance</p>
             </div>
 
-            <div className="sriya-card p-8">
-              <h3 className="text-xl font-semibold mb-4 text-white">
+            <div className="card" style={{ maxWidth: '600px', margin: '0 auto 2rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'white' }}>
                 What is your current {selectedKPI?.name}?
               </h3>
-              <p className="sriya-text-secondary mb-6">
-                Enter your current performance for {selectedKPI?.name.toLowerCase()}. Industry typical range: {selectedKPI?.typical}
+              <p style={{ color: '#cccccc', marginBottom: '1.5rem' }}>
+                Enter your current performance for {selectedKPI?.name.toLowerCase()}. 
+                Industry typical range: {selectedKPI?.typical}
               </p>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 sriya-text-primary">Current Value</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={currentValue}
-                      onChange={(e) => setCurrentValue(e.target.value)}
-                      className="w-full p-4 text-lg rounded-lg sriya-input"
-                      placeholder="0"
-                    />
-                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 sriya-text-secondary">
-                      {selectedKPI?.unit}
-                    </span>
+              <div className="input-group">
+                <label className="label">Current Value</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="number"
+                    value={currentValue}
+                    onChange={(e) => setCurrentValue(e.target.value)}
+                    className="input"
+                    placeholder="0"
+                    style={{ fontSize: '1.125rem' }}
+                  />
+                  <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#cccccc' }}>
+                    {selectedKPI?.unit}
+                  </span>
+                </div>
+              </div>
+
+              {currentValue && (
+                <div style={{ padding: '1rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: 'white' }}>Industry Benchmark</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: '#cccccc' }}>Typical Range:</span>
+                    <span style={{ color: '#f97316' }}>{selectedKPI?.typical}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                    <span style={{ color: '#cccccc' }}>World-class:</span>
+                    <span style={{ color: '#9aff00' }}>{selectedKPI?.target}</span>
                   </div>
                 </div>
-
-                {currentValue && (
-                  <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                    <h4 className="font-semibold mb-2 text-white">Industry Benchmark</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="sriya-text-secondary">Typical Range:</span>
-                        <span className="text-orange-400">{selectedKPI?.typical}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="sriya-text-secondary">World-class:</span>
-                        <span className="sriya-text-primary">{selectedKPI?.target}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
 
-            <div className="flex justify-between mt-8">
-              <button onClick={handlePrevStep} className="px-6 py-3 rounded-lg border border-gray-600 text-white hover:bg-gray-800">
-                Back
+            <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '600px', margin: '0 auto' }}>
+              <button onClick={handlePrevStep} className="button button-secondary">
+                ← Back
               </button>
               <button
                 onClick={handleNextStep}
                 disabled={!currentValue}
-                className="sriya-button-primary px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="button"
               >
-                <span>Next Step</span>
-                <ArrowRight className="w-4 h-4" />
+                Next Step →
               </button>
             </div>
           </div>
@@ -308,79 +277,77 @@ function App() {
         }
 
         return (
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2 sriya-text-primary">Aspiration</h2>
-              <p className="sriya-text-secondary">Set your target goal</p>
+          <div>
+            <div className="content">
+              <h2 className="title">Aspiration</h2>
+              <p className="subtitle">Set your target goal</p>
             </div>
 
-            <div className="sriya-card p-8">
-              <h3 className="text-xl font-semibold mb-4 text-white">
+            <div className="card" style={{ maxWidth: '600px', margin: '0 auto 2rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'white' }}>
                 Where would you like this KPI to be?
               </h3>
-              <p className="sriya-text-secondary mb-6">
+              <p style={{ color: '#cccccc', marginBottom: '1.5rem' }}>
                 Set your target goal for {selectedKPI?.name.toLowerCase()}
               </p>
 
-              <div className="mb-6 p-6 rounded-lg bg-gray-800/30">
-                <h4 className="font-semibold mb-4 text-white">Your Improvement Journey</h4>
-                <div className="flex items-center justify-between">
-                  <div className="text-center">
-                    <p className="text-sm sriya-text-secondary mb-1">Current</p>
-                    <p className="text-2xl font-bold text-white">{currentValue}{selectedKPI?.unit}</p>
+              <div style={{ marginBottom: '1.5rem', padding: '1.5rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.2)' }}>
+                <h4 style={{ fontWeight: 'bold', marginBottom: '1rem', color: 'white' }}>Your Improvement Journey</h4>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.875rem', color: '#cccccc', marginBottom: '0.25rem' }}>Current</p>
+                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>{currentValue}{selectedKPI?.unit}</p>
                   </div>
-                  <ArrowRight className="w-8 h-8 sriya-text-primary" />
-                  <div className="text-center">
-                    <p className="text-sm sriya-text-secondary mb-1">Target</p>
-                    <p className="text-2xl font-bold sriya-text-primary">
+                  <div style={{ fontSize: '2rem', color: '#9aff00' }}>→</div>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.875rem', color: '#cccccc', marginBottom: '0.25rem' }}>Target</p>
+                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#9aff00' }}>
                       {targetValue || '?'}{selectedKPI?.unit}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 sriya-text-primary">Target Value</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={targetValue}
-                      onChange={(e) => setTargetValue(e.target.value)}
-                      className="w-full p-4 text-lg rounded-lg sriya-input"
-                      placeholder="0"
-                    />
-                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 sriya-text-secondary">
-                      {selectedKPI?.unit}
-                    </span>
-                  </div>
+              <div className="input-group">
+                <label className="label">Target Value</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="number"
+                    value={targetValue}
+                    onChange={(e) => setTargetValue(e.target.value)}
+                    className="input"
+                    placeholder="0"
+                    style={{ fontSize: '1.125rem' }}
+                  />
+                  <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#cccccc' }}>
+                    {selectedKPI?.unit}
+                  </span>
                 </div>
-
-                {targetValue && improvement > 0 && (
-                  <div className="p-4 rounded-lg bg-green-900/20 border border-green-700">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="w-5 h-5 sriya-text-primary" />
-                      <span className="font-semibold sriya-text-primary">Projected Improvement</span>
-                    </div>
-                    <p className="text-2xl font-bold sriya-text-primary mt-2">
-                      {improvement.toFixed(1)}% improvement
-                    </p>
-                  </div>
-                )}
               </div>
+
+              {targetValue && improvement > 0 && (
+                <div style={{ padding: '1rem', borderRadius: '0.5rem', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid #22c55e' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1.25rem' }}>📈</span>
+                    <span style={{ fontWeight: 'bold', color: '#9aff00' }}>Projected Improvement</span>
+                  </div>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#9aff00', marginTop: '0.5rem' }}>
+                    {improvement.toFixed(1)}% improvement
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-between mt-8">
-              <button onClick={handlePrevStep} className="px-6 py-3 rounded-lg border border-gray-600 text-white hover:bg-gray-800">
-                Back
+            <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '600px', margin: '0 auto' }}>
+              <button onClick={handlePrevStep} className="button button-secondary">
+                ← Back
               </button>
               <button
                 onClick={calculateROI}
                 disabled={!targetValue}
-                className="sriya-button-primary px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="button"
               >
-                <span>Calculate ROI</span>
-                <ArrowRight className="w-4 h-4" />
+                Calculate ROI →
               </button>
             </div>
           </div>
@@ -388,115 +355,137 @@ function App() {
 
       case 4:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2 text-white">Your ROI Potential with Sriya.AI LNMs</h2>
-              <p className="sriya-text-secondary">
+          <div>
+            <div className="content">
+              <h2 className="title">Your ROI Potential with Sriya.AI LNMs</h2>
+              <p className="subtitle">
                 Based on your {selectedKPI?.name.toLowerCase()} improvement from {currentValue}{selectedKPI?.unit} to {targetValue}{selectedKPI?.unit}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="sriya-result-card uplift p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <TrendingUp className="w-6 h-6 text-cyan-400" />
-                  <h3 className="font-semibold text-cyan-400">Estimated Uplift</h3>
+            <div className="results-grid">
+              <div className="result-card uplift">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>📈</span>
+                  <h3 style={{ fontWeight: 'bold', color: '#06b6d4' }}>Estimated Uplift</h3>
                 </div>
-                <p className="text-3xl font-bold text-white mb-2">{roiResults?.improvement.toFixed(1)}%</p>
-                <p className="text-sm sriya-text-secondary">Performance improvement via Sriya LNM technology</p>
+                <p className="result-value">{roiResults?.improvement.toFixed(1)}%</p>
+                <p className="result-label">Performance improvement via Sriya LNM technology</p>
               </div>
 
-              <div className="sriya-result-card savings p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <DollarSign className="w-6 h-6 sriya-text-primary" />
-                  <h3 className="font-semibold sriya-text-primary">Approximate Savings</h3>
+              <div className="result-card savings">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>💰</span>
+                  <h3 style={{ fontWeight: 'bold', color: '#9aff00' }}>Approximate Savings</h3>
                 </div>
-                <p className="text-3xl font-bold text-white mb-2">${roiResults?.estimatedSavings.toLocaleString()}</p>
-                <p className="text-sm sriya-text-secondary">Annual cost savings from improved {selectedKPI?.name.toLowerCase()}</p>
+                <p className="result-value">${roiResults?.estimatedSavings.toLocaleString()}</p>
+                <p className="result-label">Annual cost savings from improved {selectedKPI?.name.toLowerCase()}</p>
               </div>
 
-              <div className="sriya-result-card costs p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Cpu className="w-6 h-6 text-purple-400" />
-                  <h3 className="font-semibold text-purple-400">Technology Costs</h3>
+              <div className="result-card costs">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>💻</span>
+                  <h3 style={{ fontWeight: 'bold', color: '#8b5cf6' }}>Technology Costs</h3>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="sriya-text-secondary">LNM (CPU)</span>
-                    <span className="text-white">${roiResults?.lnmCost.toLocaleString()}/yr</span>
+                <div style={{ fontSize: '0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#cccccc' }}>LNM (CPU)</span>
+                    <span style={{ color: 'white' }}>${roiResults?.lnmCost.toLocaleString()}/yr</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="sriya-text-secondary">Traditional LLM (GPU)</span>
-                    <span className="text-white">${roiResults?.llmCost.toLocaleString()}/yr</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#cccccc' }}>Traditional LLM (GPU)</span>
+                    <span style={{ color: 'white' }}>${roiResults?.llmCost.toLocaleString()}/yr</span>
                   </div>
-                  <div className="border-t border-gray-600 pt-2">
-                    <div className="flex justify-between text-sm font-semibold">
-                      <span className="sriya-text-secondary">Annual Savings</span>
-                      <span className="sriya-text-primary">${roiResults?.techSavings.toLocaleString()}</span>
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                      <span style={{ color: '#cccccc' }}>Annual Savings</span>
+                      <span style={{ color: '#9aff00' }}>${roiResults?.techSavings.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="sriya-card p-6 mb-8">
-              <div className="flex items-center space-x-3 mb-4">
-                <Zap className="w-6 h-6 text-yellow-400" />
-                <h3 className="font-semibold text-yellow-400">Why Sriya.AI Large Numerical Models?</h3>
+            <div className="card" style={{ marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <span style={{ fontSize: '1.5rem' }}>⚡</span>
+                <h3 style={{ fontWeight: 'bold', color: '#fbbf24' }}>Why Sriya.AI Large Numerical Models?</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-5 h-5 sriya-text-primary mt-0.5" />
+              <div className="grid">
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <span style={{ color: '#9aff00', fontSize: '1.25rem' }}>✓</span>
                     <div>
-                      <h4 className="font-semibold text-white">No Hallucinations</h4>
-                      <p className="text-sm sriya-text-secondary">Unlike LLMs, LNMs provide accurate, reliable outputs for numerical data</p>
+                      <h4 style={{ fontWeight: 'bold', color: 'white' }}>No Hallucinations</h4>
+                      <p style={{ fontSize: '0.875rem', color: '#cccccc' }}>Unlike LLMs, LNMs provide accurate, reliable outputs for numerical data</p>
                     </div>
                   </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-5 h-5 sriya-text-primary mt-0.5" />
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                    <span style={{ color: '#9aff00', fontSize: '1.25rem' }}>✓</span>
                     <div>
-                      <h4 className="font-semibold text-white">95-99% Accuracy</h4>
-                      <p className="text-sm sriya-text-secondary">Proven high accuracy across diverse business scenarios</p>
+                      <h4 style={{ fontWeight: 'bold', color: 'white' }}>95-99% Accuracy</h4>
+                      <p style={{ fontSize: '0.875rem', color: '#cccccc' }}>Proven high accuracy across diverse business scenarios</p>
                     </div>
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-5 h-5 sriya-text-primary mt-0.5" />
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <span style={{ color: '#9aff00', fontSize: '1.25rem' }}>✓</span>
                     <div>
-                      <h4 className="font-semibold text-white">CPU-Based</h4>
-                      <p className="text-sm sriya-text-secondary">Energy-efficient, runs on standard hardware without expensive GPUs</p>
+                      <h4 style={{ fontWeight: 'bold', color: 'white' }}>CPU-Based</h4>
+                      <p style={{ fontSize: '0.875rem', color: '#cccccc' }}>Energy-efficient, runs on standard hardware without expensive GPUs</p>
                     </div>
                   </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-5 h-5 sriya-text-primary mt-0.5" />
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                    <span style={{ color: '#9aff00', fontSize: '1.25rem' }}>✓</span>
                     <div>
-                      <h4 className="font-semibold text-white">Rapid Deployment</h4>
-                      <p className="text-sm sriya-text-secondary">Quick integration with existing ERP and business systems</p>
+                      <h4 style={{ fontWeight: 'bold', color: 'white' }}>Rapid Deployment</h4>
+                      <p style={{ fontSize: '0.875rem', color: '#cccccc' }}>Quick integration with existing ERP and business systems</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="text-center">
-              <div className="sriya-cta-section rounded-2xl p-8 mb-6">
-                <h3 className="text-2xl font-bold text-white mb-4">Ready to unlock this potential?</h3>
-                <p className="text-white/90 mb-6">
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #ec4899 100%)', 
+                borderRadius: '1rem', 
+                padding: '2rem', 
+                marginBottom: '1.5rem' 
+              }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
+                  Ready to unlock this potential?
+                </h3>
+                <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '1.5rem' }}>
                   Want to try this with your real data? Our team can help you validate these projections with a pilot program.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button className="bg-white text-gray-900 hover:bg-gray-100 font-semibold px-8 py-3 rounded-lg">
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button style={{ 
+                    background: 'white', 
+                    color: '#1f2937', 
+                    border: 'none',
+                    fontWeight: 'bold', 
+                    padding: '0.75rem 2rem', 
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer'
+                  }}>
                     Book Pilot Program
                   </button>
-                  <button className="border border-white text-white hover:bg-white/10 px-8 py-3 rounded-lg">
+                  <button style={{ 
+                    background: 'transparent', 
+                    color: 'white', 
+                    border: '1px solid white',
+                    padding: '0.75rem 2rem', 
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer'
+                  }}>
                     Remind Me Later
                   </button>
                 </div>
               </div>
-              <button onClick={() => setCurrentStep(1)} className="px-6 py-3 rounded-lg border border-gray-600 text-white hover:bg-gray-800">
-                Back to Edit
+              <button onClick={() => setCurrentStep(1)} className="button button-secondary">
+                ← Back to Edit
               </button>
             </div>
           </div>
@@ -508,37 +497,45 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen sriya-gradient-bg">
+    <div className="app">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-black/20 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-[#9aff00] rounded flex items-center justify-center">
-              <span className="text-black font-bold text-sm">S</span>
-            </div>
-            <div>
-              <h1 className="sriya-logo text-xl">Sriya.AI</h1>
-              <p className="text-xs sriya-text-secondary">ROI Estimator</p>
-            </div>
+      <header className="header">
+        <div className="logo">
+          <div className="logo-icon">S</div>
+          <div>
+            <div className="logo-text">Sriya.AI</div>
+            <div style={{ fontSize: '0.75rem', color: '#cccccc' }}>ROI Estimator</div>
           </div>
-          <div className="border border-[#9aff00] text-[#9aff00] px-3 py-1 rounded-full text-sm">
-            Large Numerical Models
-          </div>
+        </div>
+        <div className="badge">
+          Large Numerical Models
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <ProgressIndicator />
-        <StepContent />
+      <main className="container">
+        {/* Progress Steps */}
+        <div className="progress">
+          {steps.map((step, index) => (
+            <div key={step.id} style={{ display: 'flex', alignItems: 'center' }}>
+              <div className={`step ${currentStep === step.id ? 'active' : ''}`}>
+                {currentStep > step.id ? '✓' : step.id}
+              </div>
+              {index < steps.length - 1 && (
+                <div className={`step-line ${currentStep > step.id ? 'active' : ''}`} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Step Content */}
+        {renderStep()}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 bg-black/20 backdrop-blur-sm mt-16">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between text-sm sriya-text-secondary">
-          <p>© 2025 Sriya.AI. All rights reserved.</p>
-          <p>Powered by Large Numerical Models</p>
-        </div>
+      <footer className="footer">
+        <p>© 2025 Sriya.AI. All rights reserved.</p>
+        <p>Powered by Large Numerical Models</p>
       </footer>
     </div>
   )
