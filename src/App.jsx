@@ -60,7 +60,7 @@ function App() {
   const [selectedKPI, setSelectedKPI] = useState(null)
   const [currentValue, setCurrentValue] = useState('')
   const [targetValue, setTargetValue] = useState('')
-  const [showResults, setShowResults] = useState(false)
+  const [roiResults, setROIResults] = useState(null)
 
   const steps = [
     { id: 1, title: 'Industry & KPI', description: 'Select your industry and key metric' },
@@ -78,39 +78,35 @@ function App() {
     setSelectedKPI(kpi)
   }
 
-  const handleNext = () => {
+  const handleNextStep = () => {
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1)
     }
   }
 
-  const handleBack = () => {
+  const handlePrevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     }
   }
 
   const calculateROI = () => {
-    if (!currentValue || !targetValue || !selectedKPI) return null
+    if (!selectedKPI || !currentValue || !targetValue) return
 
     const current = parseFloat(currentValue)
     const target = parseFloat(targetValue)
     
     // Calculate improvement percentage
-    let improvement
-    if (selectedKPI.id.includes('rate') && !selectedKPI.id.includes('turnover')) {
-      // For rates (lower is better for most except success rates)
-      if (selectedKPI.id.includes('success') || selectedKPI.id.includes('satisfaction') || selectedKPI.id.includes('approval') || selectedKPI.id.includes('detection') || selectedKPI.id.includes('fulfillment') || selectedKPI.id.includes('conversion')) {
-        improvement = ((target - current) / current) * 100
-      } else {
-        improvement = ((current - target) / current) * 100
-      }
+    let improvement = 0
+    if (selectedKPI.id.includes('rate') && !selectedKPI.id.includes('success') && !selectedKPI.id.includes('satisfaction') && !selectedKPI.id.includes('approval') && !selectedKPI.id.includes('detection') && !selectedKPI.id.includes('fulfillment')) {
+      // For rates where lower is better (churn, backorder, readmission, etc.)
+      improvement = ((current - target) / current) * 100
     } else {
-      // For turnover and other metrics (higher is better)
+      // For rates where higher is better (success, satisfaction, approval, etc.)
       improvement = ((target - current) / current) * 100
     }
 
-    // Estimate cost savings based on industry benchmarks
+    // Base savings by industry (annual)
     const baseSavings = {
       'supply-chain': 500000,
       'financial': 1000000,
@@ -119,98 +115,73 @@ function App() {
     }
 
     const industryBaseSavings = baseSavings[selectedIndustry.id] || 500000
-    const estimatedSavings = industryBaseSavings * (Math.abs(improvement) / 100)
+    const estimatedSavings = Math.round(industryBaseSavings * (Math.abs(improvement) / 100))
 
-    // LNM vs LLM cost comparison (LNM runs on CPU, much cheaper)
-    const llmCost = 50000 // Annual GPU/TPU costs
-    const lnmCost = 8000  // Annual CPU costs
-    const costSavings = llmCost - lnmCost
+    // Technology costs
+    const lnmCost = 8000
+    const llmCost = 50000
+    const techSavings = llmCost - lnmCost
 
-    return {
+    setROIResults({
       improvement: Math.abs(improvement),
-      estimatedSavings: estimatedSavings,
-      costSavings: costSavings,
-      lnmCost: lnmCost,
-      llmCost: llmCost
-    }
+      estimatedSavings,
+      lnmCost,
+      llmCost,
+      techSavings
+    })
+
+    setCurrentStep(4)
   }
 
-  const roi = calculateROI()
+  const ProgressIndicator = () => (
+    <div className="flex items-center justify-center mb-8 px-4">
+      {steps.map((step, index) => (
+        <div key={step.id} className="flex items-center">
+          <div className={`
+            flex items-center justify-center w-12 h-12 rounded-full text-sm font-semibold transition-all duration-300
+            sriya-progress-step
+            ${currentStep === step.id ? 'active' : ''}
+            ${currentStep > step.id ? 'completed' : ''}
+          `}>
+            {currentStep > step.id ? <CheckCircle className="w-6 h-6" /> : step.id}
+          </div>
+          {index < steps.length - 1 && (
+            <div className={`w-16 h-0.5 mx-2 transition-all duration-300 ${
+              currentStep > step.id ? 'bg-[#9aff00]' : 'bg-gray-600'
+            }`} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">Sriya.AI</h1>
-                <p className="text-sm text-slate-600">ROI Estimator</p>
-              </div>
+  const StepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2 sriya-text-primary">Industry & KPI</h2>
+              <p className="sriya-text-secondary">Select your industry and key metric</p>
             </div>
-            <Badge variant="outline" className="text-blue-600 border-blue-200">
-              Large Numerical Models
-            </Badge>
-          </div>
-        </div>
-      </header>
 
-      {/* Progress Bar */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-4">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                  currentStep > step.id 
-                    ? 'bg-green-500 border-green-500 text-white' 
-                    : currentStep === step.id 
-                    ? 'bg-blue-600 border-blue-600 text-white' 
-                    : 'bg-white border-slate-300 text-slate-400'
-                }`}>
-                  {currentStep > step.id ? <CheckCircle className="w-4 h-4" /> : step.id}
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-16 h-0.5 mx-2 ${
-                    currentStep > step.id ? 'bg-green-500' : 'bg-slate-300'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-900">{steps[currentStep - 1].title}</h2>
-            <p className="text-slate-600 mt-1">{steps[currentStep - 1].description}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Step 1: Industry & KPI Selection */}
-        {currentStep === 1 && (
-          <div className="space-y-8">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Select Your Industry</h3>
+            <div className="mb-8">
+              <h3 className="text-xl font-semibold mb-4 text-white">Select Your Industry</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {industries.map((industry) => (
-                  <Card 
-                    key={industry.id} 
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedIndustry?.id === industry.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                  <Card
+                    key={industry.id}
+                    className={`cursor-pointer transition-all duration-300 sriya-card ${
+                      selectedIndustry?.id === industry.id ? 'sriya-border-accent sriya-glow' : ''
                     }`}
                     onClick={() => handleIndustrySelect(industry)}
                   >
                     <CardContent className="p-6">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">{industry.icon}</span>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-3xl">{industry.icon}</div>
                         <div>
-                          <h4 className="font-semibold text-slate-900">{industry.name}</h4>
-                          <p className="text-sm text-slate-600">{industry.description}</p>
+                          <h4 className="font-semibold text-white">{industry.name}</h4>
+                          <p className="text-sm sriya-text-secondary">{industry.description}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -220,35 +191,28 @@ function App() {
             </div>
 
             {selectedIndustry && (
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Select Your Key Performance Indicator</h3>
-                <div className="space-y-3">
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold mb-4 text-white">Choose Your KPI</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {selectedIndustry.kpis.map((kpi) => (
-                    <Card 
+                    <Card
                       key={kpi.id}
-                      className={`cursor-pointer transition-all hover:shadow-md ${
-                        selectedKPI?.id === kpi.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                      className={`cursor-pointer transition-all duration-300 sriya-card ${
+                        selectedKPI?.id === kpi.id ? 'sriya-border-accent sriya-glow' : ''
                       }`}
                       onClick={() => handleKPISelect(kpi)}
                     >
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <h4 className="font-medium text-slate-900">{kpi.name}</h4>
-                              <div className="group relative">
-                                <Info className="w-4 h-4 text-slate-400 cursor-help" />
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 z-10">
-                                  <p className="font-medium mb-1">{kpi.definition}</p>
-                                  <p className="text-xs text-slate-300">Typical: {kpi.typical} | Target: {kpi.target}</p>
-                                </div>
-                              </div>
-                            </div>
-                            <p className="text-sm text-slate-600 mt-1">{kpi.definition}</p>
+                        <h4 className="font-semibold mb-2 text-white">{kpi.name}</h4>
+                        <p className="text-xs sriya-text-secondary mb-3">{kpi.definition}</p>
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="sriya-text-secondary">Typical:</span>
+                            <span className="text-orange-400">{kpi.typical}</span>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-slate-500">Typical: {kpi.typical}</p>
-                            <p className="text-sm text-green-600">Target: {kpi.target}</p>
+                          <div className="flex justify-between text-xs">
+                            <span className="sriya-text-secondary">Target:</span>
+                            <span className="sriya-text-primary">{kpi.target}</span>
                           </div>
                         </div>
                       </CardContent>
@@ -259,224 +223,230 @@ function App() {
             )}
 
             <div className="flex justify-end">
-              <Button 
-                onClick={handleNext} 
-                disabled={!selectedKPI}
-                className="bg-blue-600 hover:bg-blue-700"
+              <Button
+                onClick={handleNextStep}
+                disabled={!selectedIndustry || !selectedKPI}
+                className="sriya-button-primary"
               >
-                Next Step <ArrowRight className="w-4 h-4 ml-2" />
+                Next Step <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </div>
           </div>
-        )}
+        )
 
-        {/* Step 2: Current State */}
-        {currentStep === 2 && selectedKPI && (
-          <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>What is your current {selectedKPI.name}?</CardTitle>
-                <CardDescription>
-                  Enter your current performance for {selectedKPI.name.toLowerCase()}. 
-                  Industry typical range: {selectedKPI.typical}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Current Value
-                    </label>
+      case 2:
+        return (
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2 sriya-text-primary">Current State</h2>
+              <p className="sriya-text-secondary">Enter your current performance</p>
+            </div>
+
+            <Card className="sriya-card">
+              <CardContent className="p-8">
+                <h3 className="text-xl font-semibold mb-4 text-white">
+                  What is your current {selectedKPI?.name}?
+                </h3>
+                <p className="sriya-text-secondary mb-6">
+                  Enter your current performance for {selectedKPI?.name.toLowerCase()}. Industry typical range: {selectedKPI?.typical}
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 sriya-text-primary">Current Value</label>
                     <div className="relative">
                       <input
                         type="number"
                         value={currentValue}
                         onChange={(e) => setCurrentValue(e.target.value)}
-                        className="w-full px-4 py-3 text-2xl font-semibold border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-4 text-lg rounded-lg sriya-input"
                         placeholder="0"
-                        step="0.01"
                       />
-                      <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-500 font-medium">
-                        {selectedKPI.unit}
+                      <span className="absolute right-4 top-1/2 transform -translate-y-1/2 sriya-text-secondary">
+                        {selectedKPI?.unit}
                       </span>
                     </div>
                   </div>
-                </div>
 
-                {currentValue && (
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <h4 className="font-medium text-slate-900 mb-2">Industry Benchmark</h4>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">Typical Range: {selectedKPI.typical}</span>
-                      <span className="text-green-600">World-class: {selectedKPI.target}</span>
+                  {currentValue && (
+                    <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                      <h4 className="font-semibold mb-2 text-white">Industry Benchmark</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="sriya-text-secondary">Typical Range:</span>
+                          <span className="text-orange-400">{selectedKPI?.typical}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="sriya-text-secondary">World-class:</span>
+                          <span className="sriya-text-primary">{selectedKPI?.target}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={handleBack}>
+            <div className="flex justify-between mt-8">
+              <Button onClick={handlePrevStep} variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
                 Back
               </Button>
-              <Button 
-                onClick={handleNext} 
+              <Button
+                onClick={handleNextStep}
                 disabled={!currentValue}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="sriya-button-primary"
               >
-                Next Step <ArrowRight className="w-4 h-4 ml-2" />
+                Next Step <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </div>
           </div>
-        )}
+        )
 
-        {/* Step 3: Aspiration Setting */}
-        {currentStep === 3 && selectedKPI && currentValue && (
-          <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Where would you like this KPI to be?</CardTitle>
-                <CardDescription>
-                  Set your target goal for {selectedKPI.name.toLowerCase()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-6">
-                  <h4 className="font-semibold text-slate-900 mb-4">Your Improvement Journey</h4>
-                  <div className="flex items-center justify-center space-x-8">
+      case 3:
+        const current = parseFloat(currentValue) || 0
+        const target = parseFloat(targetValue) || 0
+        let improvement = 0
+        
+        if (target && current) {
+          if (selectedKPI.id.includes('rate') && !selectedKPI.id.includes('success') && !selectedKPI.id.includes('satisfaction') && !selectedKPI.id.includes('approval') && !selectedKPI.id.includes('detection') && !selectedKPI.id.includes('fulfillment')) {
+            improvement = ((current - target) / current) * 100
+          } else {
+            improvement = ((target - current) / current) * 100
+          }
+        }
+
+        return (
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2 sriya-text-primary">Aspiration</h2>
+              <p className="sriya-text-secondary">Set your target goal</p>
+            </div>
+
+            <Card className="sriya-card">
+              <CardContent className="p-8">
+                <h3 className="text-xl font-semibold mb-4 text-white">
+                  Where would you like this KPI to be?
+                </h3>
+                <p className="sriya-text-secondary mb-6">
+                  Set your target goal for {selectedKPI?.name.toLowerCase()}
+                </p>
+
+                <div className="mb-6 p-6 rounded-lg bg-gray-800/30">
+                  <h4 className="font-semibold mb-4 text-white">Your Improvement Journey</h4>
+                  <div className="flex items-center justify-between">
                     <div className="text-center">
-                      <div className="bg-white rounded-lg p-4 shadow-sm">
-                        <p className="text-sm text-slate-600 mb-1">Current</p>
-                        <p className="text-2xl font-bold text-slate-900">{currentValue}{selectedKPI.unit}</p>
-                      </div>
+                      <p className="text-sm sriya-text-secondary mb-1">Current</p>
+                      <p className="text-2xl font-bold text-white">{currentValue}{selectedKPI?.unit}</p>
                     </div>
-                    <ArrowRight className="w-8 h-8 text-slate-400" />
+                    <ArrowRight className="w-8 h-8 sriya-text-primary" />
                     <div className="text-center">
-                      <div className="bg-white rounded-lg p-4 shadow-sm">
-                        <p className="text-sm text-slate-600 mb-1">Target</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {targetValue || '?'}{selectedKPI.unit}
-                        </p>
-                      </div>
+                      <p className="text-sm sriya-text-secondary mb-1">Target</p>
+                      <p className="text-2xl font-bold sriya-text-primary">
+                        {targetValue || '?'}{selectedKPI?.unit}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Target Value
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={targetValue}
-                      onChange={(e) => setTargetValue(e.target.value)}
-                      className="w-full px-4 py-3 text-2xl font-semibold border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="0"
-                      step="0.01"
-                    />
-                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-500 font-medium">
-                      {selectedKPI.unit}
-                    </span>
-                  </div>
-                </div>
-
-                {targetValue && roi && (
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <TrendingUp className="w-5 h-5 text-green-600" />
-                      <h4 className="font-medium text-green-900">Projected Improvement</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 sriya-text-primary">Target Value</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={targetValue}
+                        onChange={(e) => setTargetValue(e.target.value)}
+                        className="w-full p-4 text-lg rounded-lg sriya-input"
+                        placeholder="0"
+                      />
+                      <span className="absolute right-4 top-1/2 transform -translate-y-1/2 sriya-text-secondary">
+                        {selectedKPI?.unit}
+                      </span>
                     </div>
-                    <p className="text-2xl font-bold text-green-600">
-                      {roi.improvement.toFixed(1)}% improvement
-                    </p>
                   </div>
-                )}
+
+                  {targetValue && improvement > 0 && (
+                    <div className="p-4 rounded-lg bg-green-900/20 border border-green-700">
+                      <div className="flex items-center space-x-2">
+                        <TrendingUp className="w-5 h-5 sriya-text-primary" />
+                        <span className="font-semibold sriya-text-primary">Projected Improvement</span>
+                      </div>
+                      <p className="text-2xl font-bold sriya-text-primary mt-2">
+                        {improvement.toFixed(1)}% improvement
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={handleBack}>
+            <div className="flex justify-between mt-8">
+              <Button onClick={handlePrevStep} variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
                 Back
               </Button>
-              <Button 
-                onClick={handleNext} 
+              <Button
+                onClick={calculateROI}
                 disabled={!targetValue}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="sriya-button-primary"
               >
-                Calculate ROI <ArrowRight className="w-4 h-4 ml-2" />
+                Calculate ROI <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </div>
           </div>
-        )}
+        )
 
-        {/* Step 4: ROI Results */}
-        {currentStep === 4 && roi && (
-          <div className="space-y-8">
+      case 4:
+        return (
+          <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Your ROI Potential with Sriya.AI LNMs</h3>
-              <p className="text-slate-600">Based on your {selectedKPI.name.toLowerCase()} improvement from {currentValue}{selectedKPI.unit} to {targetValue}{selectedKPI.unit}</p>
+              <h2 className="text-3xl font-bold mb-2 text-white">Your ROI Potential with Sriya.AI LNMs</h2>
+              <p className="sriya-text-secondary">
+                Based on your {selectedKPI?.name.toLowerCase()} improvement from {currentValue}{selectedKPI?.unit} to {targetValue}{selectedKPI?.unit}
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Estimated Uplift */}
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center space-x-2 text-blue-900">
-                    <TrendingUp className="w-5 h-5" />
-                    <span>Estimated Uplift</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-blue-600 mb-2">
-                    {roi.improvement.toFixed(1)}%
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <Card className="sriya-result-card uplift">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <TrendingUp className="w-6 h-6 text-cyan-400" />
+                    <h3 className="font-semibold text-cyan-400">Estimated Uplift</h3>
                   </div>
-                  <p className="text-sm text-blue-700">
-                    Performance improvement via Sriya LNM technology
-                  </p>
+                  <p className="text-3xl font-bold text-white mb-2">{roiResults?.improvement.toFixed(1)}%</p>
+                  <p className="text-sm sriya-text-secondary">Performance improvement via Sriya LNM technology</p>
                 </CardContent>
               </Card>
 
-              {/* Cost Savings */}
-              <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center space-x-2 text-green-900">
-                    <DollarSign className="w-5 h-5" />
-                    <span>Approximate Savings</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-green-600 mb-2">
-                    ${roi.estimatedSavings.toLocaleString()}
+              <Card className="sriya-result-card savings">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <DollarSign className="w-6 h-6 sriya-text-primary" />
+                    <h3 className="font-semibold sriya-text-primary">Approximate Savings</h3>
                   </div>
-                  <p className="text-sm text-green-700">
-                    Annual cost savings from improved {selectedKPI.name.toLowerCase()}
-                  </p>
+                  <p className="text-3xl font-bold text-white mb-2">${roiResults?.estimatedSavings.toLocaleString()}</p>
+                  <p className="text-sm sriya-text-secondary">Annual cost savings from improved {selectedKPI?.name.toLowerCase()}</p>
                 </CardContent>
               </Card>
 
-              {/* Technology Cost Comparison */}
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center space-x-2 text-purple-900">
-                    <Cpu className="w-5 h-5" />
-                    <span>Technology Costs</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-purple-700">LNM (CPU)</span>
-                      <span className="font-semibold text-purple-900">${roi.lnmCost.toLocaleString()}/yr</span>
+              <Card className="sriya-result-card costs">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <Cpu className="w-6 h-6 text-purple-400" />
+                    <h3 className="font-semibold text-purple-400">Technology Costs</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="sriya-text-secondary">LNM (CPU)</span>
+                      <span className="text-white">${roiResults?.lnmCost.toLocaleString()}/yr</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-purple-700">Traditional LLM (GPU)</span>
-                      <span className="font-semibold text-purple-900">${roi.llmCost.toLocaleString()}/yr</span>
+                    <div className="flex justify-between text-sm">
+                      <span className="sriya-text-secondary">Traditional LLM (GPU)</span>
+                      <span className="text-white">${roiResults?.llmCost.toLocaleString()}/yr</span>
                     </div>
-                    <div className="border-t border-purple-200 pt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-purple-900">Annual Savings</span>
-                        <span className="font-bold text-green-600">${roi.costSavings.toLocaleString()}</span>
+                    <div className="border-t border-gray-600 pt-2">
+                      <div className="flex justify-between text-sm font-semibold">
+                        <span className="sriya-text-secondary">Annual Savings</span>
+                        <span className="sriya-text-primary">${roiResults?.techSavings.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -484,45 +454,42 @@ function App() {
               </Card>
             </div>
 
-            {/* Key Benefits */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Zap className="w-5 h-5 text-yellow-500" />
-                  <span>Why Sriya.AI Large Numerical Models?</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <Card className="sriya-card mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <Zap className="w-6 h-6 text-yellow-400" />
+                  <h3 className="font-semibold text-yellow-400">Why Sriya.AI Large Numerical Models?</h3>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div className="flex items-start space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                      <CheckCircle className="w-5 h-5 sriya-text-primary mt-0.5" />
                       <div>
-                        <h4 className="font-medium text-slate-900">No Hallucinations</h4>
-                        <p className="text-sm text-slate-600">Unlike LLMs, LNMs provide accurate, reliable outputs for numerical data</p>
+                        <h4 className="font-semibold text-white">No Hallucinations</h4>
+                        <p className="text-sm sriya-text-secondary">Unlike LLMs, LNMs provide accurate, reliable outputs for numerical data</p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                      <CheckCircle className="w-5 h-5 sriya-text-primary mt-0.5" />
                       <div>
-                        <h4 className="font-medium text-slate-900">95-99% Accuracy</h4>
-                        <p className="text-sm text-slate-600">Proven high accuracy across diverse business scenarios</p>
+                        <h4 className="font-semibold text-white">95-99% Accuracy</h4>
+                        <p className="text-sm sriya-text-secondary">Proven high accuracy across diverse business scenarios</p>
                       </div>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <div className="flex items-start space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                      <CheckCircle className="w-5 h-5 sriya-text-primary mt-0.5" />
                       <div>
-                        <h4 className="font-medium text-slate-900">CPU-Based</h4>
-                        <p className="text-sm text-slate-600">Energy-efficient, runs on standard hardware without expensive GPUs</p>
+                        <h4 className="font-semibold text-white">CPU-Based</h4>
+                        <p className="text-sm sriya-text-secondary">Energy-efficient, runs on standard hardware without expensive GPUs</p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                      <CheckCircle className="w-5 h-5 sriya-text-primary mt-0.5" />
                       <div>
-                        <h4 className="font-medium text-slate-900">Rapid Deployment</h4>
-                        <p className="text-sm text-slate-600">Quick integration with existing ERP and business systems</p>
+                        <h4 className="font-semibold text-white">Rapid Deployment</h4>
+                        <p className="text-sm sriya-text-secondary">Quick integration with existing ERP and business systems</p>
                       </div>
                     </div>
                   </div>
@@ -530,47 +497,64 @@ function App() {
               </CardContent>
             </Card>
 
-            {/* Call to Action */}
-            <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-              <CardContent className="p-8 text-center">
-                <h3 className="text-2xl font-bold mb-4">Ready to unlock this potential?</h3>
-                <p className="text-blue-100 mb-6">
+            <div className="text-center">
+              <div className="sriya-cta-section rounded-2xl p-8 mb-6">
+                <h3 className="text-2xl font-bold text-white mb-4">Ready to unlock this potential?</h3>
+                <p className="text-white/90 mb-6">
                   Want to try this with your real data? Our team can help you validate these projections with a pilot program.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
+                  <Button className="bg-white text-gray-900 hover:bg-gray-100 font-semibold px-8 py-3">
                     Book Pilot Program
                   </Button>
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+                  <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3">
                     Remind Me Later
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-start">
-              <Button variant="outline" onClick={handleBack}>
+              </div>
+              <Button onClick={() => setCurrentStep(1)} variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
                 Back to Edit
               </Button>
             </div>
           </div>
-        )}
+        )
+
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="min-h-screen sriya-gradient-bg">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-black/20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-[#9aff00] rounded flex items-center justify-center">
+              <span className="text-black font-bold text-sm">S</span>
+            </div>
+            <div>
+              <h1 className="sriya-logo text-xl">Sriya.AI</h1>
+              <p className="text-xs sriya-text-secondary">ROI Estimator</p>
+            </div>
+          </div>
+          <Badge variant="outline" className="border-[#9aff00] text-[#9aff00]">
+            Large Numerical Models
+          </Badge>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <ProgressIndicator />
+        <StepContent />
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
-                <span className="text-white font-bold text-xs">S</span>
-              </div>
-              <span className="text-slate-600 text-sm">© 2025 Sriya.AI. All rights reserved.</span>
-            </div>
-            <div className="text-sm text-slate-500">
-              Powered by Large Numerical Models
-            </div>
-          </div>
+      <footer className="border-t border-gray-800 bg-black/20 backdrop-blur-sm mt-16">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between text-sm sriya-text-secondary">
+          <p>© 2025 Sriya.AI. All rights reserved.</p>
+          <p>Powered by Large Numerical Models</p>
         </div>
       </footer>
     </div>
